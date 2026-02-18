@@ -3,13 +3,13 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Messenger MVP</title>
+    <title>Messenger MVP (WebSocket)</title>
     <style>
       body { font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial; margin: 20px; }
       .row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
       input, button { padding: 10px; font-size: 14px; }
       input { min-width: 260px; }
-      #messages { margin-top: 16px; border: 1px solid #ddd; border-radius: 10px; padding: 12px; max-width: 900px; }
+      #messages { margin-top: 16px; border: 1px solid #ddd; border-radius: 10px; padding: 12px; max-width: 900px; height: 400px; overflow-y: auto; }
       .msg { padding: 10px 0; border-bottom: 1px solid #eee; }
       .msg:last-child { border-bottom: none; }
       .meta { color: #666; font-size: 12px; margin-bottom: 4px; }
@@ -20,7 +20,7 @@
     </style>
   </head>
   <body>
-    <h1>Messenger MVP</h1>
+    <h1>Messenger MVP (WebSocket)</h1>
 
     <div class="row">
       <label>
@@ -35,13 +35,15 @@
     <div class="row">
       <input id="text" placeholder="Напиши сообщение..." />
       <button id="send">Отправить</button>
-      <button id="reload">Обновить</button>
+      <button id="reload">Обновить историю</button>
     </div>
 
     <div id="status"></div>
 
     <div id="messages"></div>
 
+    <!-- Подключаем Socket.IO клиент -->
+    <script src="/socket.io/socket.io.js"></script>
     <script>
       const $ = (id) => document.getElementById(id);
 
@@ -49,6 +51,9 @@
       const messagesEl = $("messages");
       const senderIdEl = $("senderId");
       const textEl = $("text");
+
+      // Инициализация Socket.IO
+      const socket = io();
 
       function setStatus(type, msg) {
         statusEl.className = type;
@@ -64,6 +69,29 @@
           .replaceAll("'", "&#039;");
       }
 
+      // Функция для добавления одного сообщения в DOM
+      function displayMessage(message) {
+        const msgDiv = document.createElement('div');
+        msgDiv.className = 'msg';
+
+        const metaDiv = document.createElement('div');
+        metaDiv.className = 'meta';
+
+        const name = message.sender?.name || message.sender?.email || message.senderId || 'Неизвестно';
+        const when = message.createdAt ? new Date(message.createdAt).toLocaleString() : '';
+
+        metaDiv.textContent = `${escapeHtml(name)} • ${escapeHtml(when)}`;
+
+        const textDiv = document.createElement('div');
+        textDiv.className = 'text';
+        textDiv.textContent = message.text;
+
+        msgDiv.appendChild(metaDiv);
+        msgDiv.appendChild(textDiv);
+        messagesEl.appendChild(msgDiv);
+      }
+
+      // Загрузка истории сообщений (полная перерисовка)
       async function loadMessages() {
         try {
           setStatus("", "");
@@ -71,18 +99,9 @@
           const data = await res.json();
           if (!res.ok) throw new Error(data?.error || "Failed to load messages");
 
-          messagesEl.innerHTML = data
-            .map((m) => {
-              const name = m.sender?.name || m.sender?.email || m.senderId;
-              const when = m.createdAt ? new Date(m.createdAt).toLocaleString() : "";
-              return `
-                <div class="msg">
-                  <div class="meta">${escapeHtml(name)} • ${escapeHtml(when)}</div>
-                  <div class="text">${escapeHtml(m.text)}</div>
-                </div>
-              `;
-            })
-            .join("");
+          // Очищаем и рендерим все сообщения
+          messagesEl.innerHTML = '';
+          data.forEach(displayMessage);
 
           // автоскролл вниз
           messagesEl.scrollTop = messagesEl.scrollHeight;
@@ -91,6 +110,7 @@
         }
       }
 
+      // Отправка нового сообщения
       async function sendMessage() {
         try {
           const senderId = senderIdEl.value.trim();
@@ -110,15 +130,22 @@
           const data = await res.json();
           if (!res.ok) throw new Error(data?.error || "Failed to create message");
 
-          textEl.value = "";
+          textEl.value = ""; // очищаем поле ввода
           setStatus("ok", "Сообщение отправлено ✅");
-          await loadMessages();
+          // Не вызываем loadMessages – новое сообщение придёт через сокет
         } catch (e) {
           setStatus("error", e.message);
         }
       }
 
-      // localStorage senderId
+      // Обработчик нового сообщения от сокета
+      socket.on('new_message', (message) => {
+        displayMessage(message);
+        messagesEl.scrollTop = messagesEl.scrollHeight; // прокрутка вниз
+        setStatus("ok", "Новое сообщение получено");
+      });
+
+      // Сохранение senderId в localStorage
       senderIdEl.value = localStorage.getItem("senderId") || "";
       $("saveSender").addEventListener("click", () => {
         localStorage.setItem("senderId", senderIdEl.value.trim());
@@ -132,9 +159,13 @@
         if (e.key === "Enter") sendMessage();
       });
 
-      // initial load + polling
+      // Загружаем историю при старте
       loadMessages();
-      setInterval(loadMessages, 3000);
+
+      // Можно добавить обработчик ошибок сокета
+      socket.on('connect_error', (err) => {
+        setStatus('error', 'Ошибка подключения к WebSocket: ' + err.message);
+      });
     </script>
   </body>
 </html>

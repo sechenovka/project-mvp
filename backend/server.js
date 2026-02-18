@@ -1,10 +1,15 @@
 const express = require("express");
+const http = require("http");
+const { Server } = require("socket.io");
 const { prisma } = require("./db");
 const path = require("path");
 
 const app = express();
+const server = http.createServer(app);
+const io = new Server(server); // WebSocket на том же сервере
+
 app.use(express.json());
-// serve frontend (same origin, no CORS issues)
+// раздаём статические файлы фронтенда
 app.use(express.static(path.join(__dirname, "..", "frontend")));
 
 // health-check
@@ -99,6 +104,9 @@ app.post("/messages", async (req, res) => {
       },
     });
 
+    // Отправляем событие всем подключённым клиентам
+    io.emit("new_message", msg);
+
     res.status(201).json(msg);
   } catch (e) {
     console.error(e);
@@ -108,7 +116,13 @@ app.post("/messages", async (req, res) => {
   }
 });
 
+// Подключаем обработчик WebSocket (можно добавить логирование)
+io.on("connection", (socket) => {
+  console.log("a user connected");
+});
+
 const PORT = process.env.PORT || 3001;
-app.listen(PORT, () => {
+// Вместо app.listen используем server.listen (http-сервер с интегрированным socket.io)
+server.listen(PORT, () => {
   console.log(`API running on http://localhost:${PORT}`);
 });
