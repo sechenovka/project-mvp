@@ -1,0 +1,17 @@
+# Node
+node_modules/
+*.log
+
+# Env
+.env
+.env.*
+
+# Next.js
+.next/
+out/
+
+# OS
+.DS_Store
+
+# Prisma
+backend/prisma/dev.db

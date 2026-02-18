@@ -1,0 +1,140 @@
+<!doctype html>
+<html lang="ru">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Messenger MVP</title>
+    <style>
+      body { font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial; margin: 20px; }
+      .row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+      input, button { padding: 10px; font-size: 14px; }
+      input { min-width: 260px; }
+      #messages { margin-top: 16px; border: 1px solid #ddd; border-radius: 10px; padding: 12px; max-width: 900px; }
+      .msg { padding: 10px 0; border-bottom: 1px solid #eee; }
+      .msg:last-child { border-bottom: none; }
+      .meta { color: #666; font-size: 12px; margin-bottom: 4px; }
+      .text { font-size: 14px; }
+      .error { color: #b00020; margin-top: 10px; }
+      .ok { color: #0a7a0a; margin-top: 10px; }
+      .spacer { height: 8px; }
+    </style>
+  </head>
+  <body>
+    <h1>Messenger MVP</h1>
+
+    <div class="row">
+      <label>
+        senderId:
+        <input id="senderId" placeholder="вставь user id (из seed/Prisma Studio)" />
+      </label>
+      <button id="saveSender">Сохранить</button>
+    </div>
+
+    <div class="spacer"></div>
+
+    <div class="row">
+      <input id="text" placeholder="Напиши сообщение..." />
+      <button id="send">Отправить</button>
+      <button id="reload">Обновить</button>
+    </div>
+
+    <div id="status"></div>
+
+    <div id="messages"></div>
+
+    <script>
+      const $ = (id) => document.getElementById(id);
+
+      const statusEl = $("status");
+      const messagesEl = $("messages");
+      const senderIdEl = $("senderId");
+      const textEl = $("text");
+
+      function setStatus(type, msg) {
+        statusEl.className = type;
+        statusEl.textContent = msg || "";
+      }
+
+      function escapeHtml(str) {
+        return String(str)
+          .replaceAll("&", "&amp;")
+          .replaceAll("<", "&lt;")
+          .replaceAll(">", "&gt;")
+          .replaceAll('"', "&quot;")
+          .replaceAll("'", "&#039;");
+      }
+
+      async function loadMessages() {
+        try {
+          setStatus("", "");
+          const res = await fetch("/messages?take=200");
+          const data = await res.json();
+          if (!res.ok) throw new Error(data?.error || "Failed to load messages");
+
+          messagesEl.innerHTML = data
+            .map((m) => {
+              const name = m.sender?.name || m.sender?.email || m.senderId;
+              const when = m.createdAt ? new Date(m.createdAt).toLocaleString() : "";
+              return `
+                <div class="msg">
+                  <div class="meta">${escapeHtml(name)} • ${escapeHtml(when)}</div>
+                  <div class="text">${escapeHtml(m.text)}</div>
+                </div>
+              `;
+            })
+            .join("");
+
+          // автоскролл вниз
+          messagesEl.scrollTop = messagesEl.scrollHeight;
+        } catch (e) {
+          setStatus("error", e.message);
+        }
+      }
+
+      async function sendMessage() {
+        try {
+          const senderId = senderIdEl.value.trim();
+          const text = textEl.value.trim();
+
+          if (!senderId) return setStatus("error", "Укажи senderId");
+          if (!text) return setStatus("error", "Напиши текст сообщения");
+
+          setStatus("", "");
+
+          const res = await fetch("/messages", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ text, senderId }),
+          });
+
+          const data = await res.json();
+          if (!res.ok) throw new Error(data?.error || "Failed to create message");
+
+          textEl.value = "";
+          setStatus("ok", "Сообщение отправлено ✅");
+          await loadMessages();
+        } catch (e) {
+          setStatus("error", e.message);
+        }
+      }
+
+      // localStorage senderId
+      senderIdEl.value = localStorage.getItem("senderId") || "";
+      $("saveSender").addEventListener("click", () => {
+        localStorage.setItem("senderId", senderIdEl.value.trim());
+        setStatus("ok", "senderId сохранён ✅");
+      });
+
+      $("send").addEventListener("click", sendMessage);
+      $("reload").addEventListener("click", loadMessages);
+
+      textEl.addEventListener("keydown", (e) => {
+        if (e.key === "Enter") sendMessage();
+      });
+
+      // initial load + polling
+      loadMessages();
+      setInterval(loadMessages, 3000);
+    </script>
+  </body>
+</html>
