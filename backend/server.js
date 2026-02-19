@@ -7,14 +7,18 @@ const { prisma } = require("./db");
 
 const app = express();
 const server = http.createServer(app);
-const io = new Server(server);
+const io = new Server(server, {
+  cors: {
+    origin: "*", // для отладки; в продакшене лучше ограничить
+    methods: ["GET", "POST"]
+  }
+});
 
 const PORT = process.env.PORT || 3001;
 
-// Мидлвары
 app.use(express.json());
 
-// Статика из папки frontend (без public)
+// Раздача статики из папки frontend (без public)
 const frontendPath = path.join(__dirname, "../frontend");
 app.use(express.static(frontendPath));
 
@@ -27,9 +31,9 @@ const validate = (req, res, next) => {
   next();
 };
 
-// === API Роуты ===
+// ========== API ==========
 
-// Создание/получение пользователя (нужен для senderId)
+// Создание/получение пользователя
 app.post(
   "/users",
   [
@@ -40,15 +44,19 @@ app.post(
   async (req, res) => {
     try {
       const { email, name } = req.body;
+      console.log(`📨 POST /users: ${email}`);
       let user = await prisma.user.findUnique({ where: { email } });
       if (!user) {
         user = await prisma.user.create({
           data: { email, name: name || email.split("@")[0] },
         });
+        console.log(`✅ User created: ${user.id}`);
+      } else {
+        console.log(`✅ User found: ${user.id}`);
       }
       res.json({ id: user.id, email: user.email, name: user.name });
     } catch (e) {
-      console.error(e);
+      console.error("❌ Error in /users:", e);
       res.status(500).json({ error: "Failed to create/find user" });
     }
   }
@@ -58,14 +66,16 @@ app.post(
 app.get("/messages", async (req, res) => {
   try {
     const take = Math.min(Number(req.query.take || 50), 200);
+    console.log(`📨 GET /messages?take=${take}`);
     const messages = await prisma.message.findMany({
       take,
       orderBy: { createdAt: "desc" },
       include: { sender: { select: { id: true, email: true, name: true } } },
     });
+    console.log(`✅ Loaded ${messages.length} messages`);
     res.json(messages.reverse());
   } catch (e) {
-    console.error(e);
+    console.error("❌ Error in GET /messages:", e);
     res.status(500).json({ error: "Failed to load messages" });
   }
 });
@@ -81,23 +91,30 @@ app.post(
   async (req, res) => {
     try {
       const { text, senderId } = req.body;
+      console.log(`📨 POST /messages: text="${text}", senderId=${senderId}`);
 
+      // Проверяем существование отправителя
       const sender = await prisma.user.findUnique({ where: { id: senderId } });
       if (!sender) {
+        console.log(`❌ Sender not found: ${senderId}`);
         return res.status(400).json({ error: "Sender not found" });
       }
 
+      // Создаём сообщение в БД
       const msg = await prisma.message.create({
         data: { text, senderId },
         include: { sender: { select: { id: true, email: true, name: true } } },
       });
+      console.log(`✅ Message created: id=${msg.id}`);
 
-      // Отправляем событие всем клиентам
+      // Отправляем событие всем подключённым клиентам
+      const clientsCount = io.engine.clientsCount;
+      console.log(`📤 Emitting 'new_message' to ${clientsCount} clients`);
       io.emit("new_message", msg);
 
       res.status(201).json(msg);
     } catch (e) {
-      console.error(e);
+      console.error("❌ Error in POST /messages:", e);
       res.status(500).json({ error: "Failed to create message" });
     }
   }
@@ -108,20 +125,21 @@ app.get("/health", (req, res) => {
   res.json({ ok: true });
 });
 
-// Корневой маршрут — отдаём index.html (если запрос не обработан статикой)
+// Корневой маршрут — отдаём index.html
 app.get("/", (req, res) => {
   res.sendFile(path.join(frontendPath, "index.html"));
 });
 
-// === WebSocket ===
+// ========== WebSocket ==========
 io.on("connection", (socket) => {
-  console.log("a user connected");
+  console.log(`🔌 User connected (socket id: ${socket.id}). Total clients: ${io.engine.clientsCount}`);
+  
   socket.on("disconnect", () => {
-    console.log("user disconnected");
+    console.log(`🔌 User disconnected (socket id: ${socket.id}). Remaining clients: ${io.engine.clientsCount}`);
   });
 });
 
 // Запуск сервера
 server.listen(PORT, () => {
-  console.log(`Server running on http://localhost:${PORT}`);
+  console.log(`🚀 Server running on http://localhost:${PORT}`);
 });

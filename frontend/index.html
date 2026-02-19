@@ -2,7 +2,7 @@
 <html lang="ru">
 <head>
     <meta charset="UTF-8" />
-    <title>Messenger MVP (WebSocket + MySQL)</title>
+    <title>Messenger MVP (WebSocket + SQLite)</title>
     <style>
         body { font-family: system-ui; margin: 20px; }
         .row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
@@ -15,7 +15,7 @@
     </style>
 </head>
 <body>
-    <h1>Messenger с MySQL и WebSocket</h1>
+    <h1>Messenger с WebSocket и SQLite</h1>
 
     <div id="userSection" class="row">
         <input id="email" type="email" placeholder="Email (обязательно)" />
@@ -36,7 +36,13 @@
 
     <script src="/socket.io/socket.io.js"></script>
     <script>
-        const socket = io();
+        // Подключаемся к тому же хосту, откуда загружена страница
+        const socket = io(window.location.origin);
+
+        // Логи сокета
+        socket.on('connect', () => console.log('✅ Socket connected, id:', socket.id));
+        socket.on('disconnect', () => console.log('❌ Socket disconnected'));
+        socket.on('connect_error', (err) => console.error('⚠️ Socket connection error:', err));
 
         const statusEl = document.getElementById('status');
         const messagesEl = document.getElementById('messages');
@@ -65,42 +71,48 @@
         }
 
         function displayMessage(msg) {
-            const msgDiv = document.createElement('div');
-            msgDiv.className = 'msg';
-            const meta = document.createElement('div');
-            meta.className = 'meta';
-            const sender = msg.sender?.name || msg.sender?.email || msg.senderId;
-            const time = msg.createdAt ? new Date(msg.createdAt).toLocaleString() : '';
-            meta.textContent = `${escapeHtml(sender)} • ${time}`;
-            const textDiv = document.createElement('div');
-            textDiv.textContent = msg.text;
-            msgDiv.appendChild(meta);
-            msgDiv.appendChild(textDiv);
-            messagesEl.appendChild(msgDiv);
+            console.log('📩 displayMessage called with:', msg);
+            try {
+                const msgDiv = document.createElement('div');
+                msgDiv.className = 'msg';
+                const meta = document.createElement('div');
+                meta.className = 'meta';
+                const sender = msg.sender?.name || msg.sender?.email || msg.senderId || 'Неизвестно';
+                const time = msg.createdAt ? new Date(msg.createdAt).toLocaleString() : '';
+                meta.textContent = `${escapeHtml(sender)} • ${time}`;
+                const textDiv = document.createElement('div');
+                textDiv.textContent = msg.text;
+                msgDiv.appendChild(meta);
+                msgDiv.appendChild(textDiv);
+                messagesEl.appendChild(msgDiv);
+                console.log('✅ Message displayed');
+            } catch (e) {
+                console.error('❌ Error in displayMessage:', e);
+            }
         }
 
         async function loadMessages() {
             try {
+                console.log('📨 Loading messages...');
                 const res = await fetch('/messages?take=200');
-                // Проверяем, что ответ успешный
                 if (!res.ok) {
                     const errorData = await res.json();
                     throw new Error(errorData.error || `HTTP error ${res.status}`);
                 }
                 const data = await res.json();
-                // Проверяем, что данные — массив
+                console.log(`✅ Loaded ${data.length} messages`);
                 if (!Array.isArray(data)) {
-                    throw new Error('Сервер вернул некорректные данные (не массив)');
+                    throw new Error('Data is not array');
                 }
                 messagesEl.innerHTML = '';
                 data.forEach(displayMessage);
                 messagesEl.scrollTop = messagesEl.scrollHeight;
             } catch (e) {
                 setStatus('error', 'Ошибка загрузки: ' + e.message);
+                console.error('❌ loadMessages error:', e);
             }
         }
 
-        // Создание/получение пользователя
         async function createOrGetUser() {
             const email = emailInput.value.trim();
             if (!email) {
@@ -108,6 +120,7 @@
                 return;
             }
             try {
+                console.log('📨 Creating/getting user with email:', email);
                 const res = await fetch('/users', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
@@ -121,12 +134,13 @@
                 emailInput.disabled = true;
                 nameInput.disabled = true;
                 createUserBtn.disabled = true;
+                console.log('✅ User set:', user);
             } catch (e) {
                 setStatus('error', e.message);
+                console.error('❌ createOrGetUser error:', e);
             }
         }
 
-        // Отправка сообщения
         async function sendMessage() {
             if (!currentUserId) {
                 setStatus('error', 'Сначала создайте пользователя');
@@ -135,32 +149,37 @@
             const text = textInput.value.trim();
             if (!text) return;
             try {
+                console.log('📨 Sending message:', { text, senderId: currentUserId });
                 const res = await fetch('/messages', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ text, senderId: currentUserId })
                 });
                 const data = await res.json();
+                console.log('📨 POST /messages response:', data);
                 if (!res.ok) throw new Error(data.error || 'Ошибка');
                 textInput.value = '';
                 // сообщение придёт через сокет
             } catch (e) {
                 setStatus('error', e.message);
+                console.error('❌ sendMessage error:', e);
             }
         }
 
-        // WebSocket: новые сообщения
+        // Обработчик новых сообщений через сокет
         socket.on('new_message', (msg) => {
+            console.log('📩 New message received via socket:', msg);
             displayMessage(msg);
             messagesEl.scrollTop = messagesEl.scrollHeight;
         });
 
-        // Если userId уже есть в localStorage, загружаем историю и блокируем форму входа
+        // Если userId уже есть в localStorage
         if (currentUserId) {
             emailInput.disabled = true;
             nameInput.disabled = true;
             createUserBtn.disabled = true;
             setStatus('ok', 'Добро пожаловать! ID загружен из localStorage');
+            console.log('🔄 Existing userId:', currentUserId);
         }
 
         // Обработчики событий
