@@ -2,7 +2,7 @@
 <html lang="ru">
 <head>
     <meta charset="UTF-8" />
-    <title>Messenger MVP (WebSocket + SQLite)</title>
+    <title>Messenger (автономная версия)</title>
     <style>
         body { font-family: system-ui; margin: 20px; }
         .row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
@@ -15,183 +15,24 @@
     </style>
 </head>
 <body>
-    <h1>Messenger с WebSocket и SQLite</h1>
+    <h1>Локальный мессенджер</h1>
 
     <div id="userSection" class="row">
         <input id="email" type="email" placeholder="Email (обязательно)" />
         <input id="name" placeholder="Имя (необязательно)" />
-        <button id="createUser">Создать / Войти</button>
+        <button id="createUser">Войти</button>
     </div>
-
-    <div class="spacer"></div>
-
+ 
     <div class="row">
         <input id="text" placeholder="Сообщение..." />
         <button id="send">Отправить</button>
-        <button id="reload">Обновить историю</button>
+        <button id="reload">Обновить</button>
     </div>
 
     <div id="status"></div>
     <div id="messages"></div>
 
     <script src="/socket.io/socket.io.js"></script>
-    <script>
-        // Подключаемся к тому же хосту, откуда загружена страница
-        const socket = io(window.location.origin);
-
-        // Логи сокета
-        socket.on('connect', () => console.log('✅ Socket connected, id:', socket.id));
-        socket.on('disconnect', () => console.log('❌ Socket disconnected'));
-        socket.on('connect_error', (err) => console.error('⚠️ Socket connection error:', err));
-
-        const statusEl = document.getElementById('status');
-        const messagesEl = document.getElementById('messages');
-        const emailInput = document.getElementById('email');
-        const nameInput = document.getElementById('name');
-        const textInput = document.getElementById('text');
-        const createUserBtn = document.getElementById('createUser');
-        const sendBtn = document.getElementById('send');
-        const reloadBtn = document.getElementById('reload');
-
-        let currentUserId = localStorage.getItem('userId') || null;
-
-        function setStatus(type, msg) {
-            statusEl.className = type;
-            statusEl.textContent = msg;
-        }
-
-        function escapeHtml(str) {
-            return String(str).replace(/[&<>"]/g, function(match) {
-                if (match === '&') return '&amp;';
-                if (match === '<') return '&lt;';
-                if (match === '>') return '&gt;';
-                if (match === '"') return '&quot;';
-                return match;
-            });
-        }
-
-        function displayMessage(msg) {
-            console.log('📩 displayMessage called with:', msg);
-            try {
-                const msgDiv = document.createElement('div');
-                msgDiv.className = 'msg';
-                const meta = document.createElement('div');
-                meta.className = 'meta';
-                const sender = msg.sender?.name || msg.sender?.email || msg.senderId || 'Неизвестно';
-                const time = msg.createdAt ? new Date(msg.createdAt).toLocaleString() : '';
-                meta.textContent = `${escapeHtml(sender)} • ${time}`;
-                const textDiv = document.createElement('div');
-                textDiv.textContent = msg.text;
-                msgDiv.appendChild(meta);
-                msgDiv.appendChild(textDiv);
-                messagesEl.appendChild(msgDiv);
-                console.log('✅ Message displayed');
-            } catch (e) {
-                console.error('❌ Error in displayMessage:', e);
-            }
-        }
-
-        async function loadMessages() {
-            try {
-                console.log('📨 Loading messages...');
-                const res = await fetch('/messages?take=200');
-                if (!res.ok) {
-                    const errorData = await res.json();
-                    throw new Error(errorData.error || `HTTP error ${res.status}`);
-                }
-                const data = await res.json();
-                console.log(`✅ Loaded ${data.length} messages`);
-                if (!Array.isArray(data)) {
-                    throw new Error('Data is not array');
-                }
-                messagesEl.innerHTML = '';
-                data.forEach(displayMessage);
-                messagesEl.scrollTop = messagesEl.scrollHeight;
-            } catch (e) {
-                setStatus('error', 'Ошибка загрузки: ' + e.message);
-                console.error('❌ loadMessages error:', e);
-            }
-        }
-
-        async function createOrGetUser() {
-            const email = emailInput.value.trim();
-            if (!email) {
-                setStatus('error', 'Введите email');
-                return;
-            }
-            try {
-                console.log('📨 Creating/getting user with email:', email);
-                const res = await fetch('/users', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ email, name: nameInput.value.trim() || undefined })
-                });
-                const user = await res.json();
-                if (!res.ok) throw new Error(user.error || 'Ошибка');
-                currentUserId = user.id;
-                localStorage.setItem('userId', currentUserId);
-                setStatus('ok', `Пользователь: ${user.name || user.email} (ID сохранён)`);
-                emailInput.disabled = true;
-                nameInput.disabled = true;
-                createUserBtn.disabled = true;
-                console.log('✅ User set:', user);
-            } catch (e) {
-                setStatus('error', e.message);
-                console.error('❌ createOrGetUser error:', e);
-            }
-        }
-
-        async function sendMessage() {
-            if (!currentUserId) {
-                setStatus('error', 'Сначала создайте пользователя');
-                return;
-            }
-            const text = textInput.value.trim();
-            if (!text) return;
-            try {
-                console.log('📨 Sending message:', { text, senderId: currentUserId });
-                const res = await fetch('/messages', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ text, senderId: currentUserId })
-                });
-                const data = await res.json();
-                console.log('📨 POST /messages response:', data);
-                if (!res.ok) throw new Error(data.error || 'Ошибка');
-                textInput.value = '';
-                // сообщение придёт через сокет
-            } catch (e) {
-                setStatus('error', e.message);
-                console.error('❌ sendMessage error:', e);
-            }
-        }
-
-        // Обработчик новых сообщений через сокет
-        socket.on('new_message', (msg) => {
-            console.log('📩 New message received via socket:', msg);
-            displayMessage(msg);
-            messagesEl.scrollTop = messagesEl.scrollHeight;
-        });
-
-        // Если userId уже есть в localStorage
-        if (currentUserId) {
-            emailInput.disabled = true;
-            nameInput.disabled = true;
-            createUserBtn.disabled = true;
-            setStatus('ok', 'Добро пожаловать! ID загружен из localStorage');
-            console.log('🔄 Existing userId:', currentUserId);
-        }
-
-        // Обработчики событий
-        createUserBtn.addEventListener('click', createOrGetUser);
-        sendBtn.addEventListener('click', sendMessage);
-        reloadBtn.addEventListener('click', loadMessages);
-        textInput.addEventListener('keydown', (e) => {
-            if (e.key === 'Enter') sendMessage();
-        });
-
-        // Загрузка истории при старте
-        loadMessages();
-    </script>
+    <script src="client.js"></script>
 </body>
 </html>

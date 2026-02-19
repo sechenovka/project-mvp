@@ -1,13 +1,15 @@
 {
-  "name": "backend",
+  "name": "messenger-backend",
   "version": "1.0.0",
-  "description": "Messenger backend with WebSocket and SQLite",
+  "description": "Messenger server with WebSocket and SQLite",
   "main": "server.js",
+  "bin": "server.js",
   "scripts": {
-    "start": "prisma migrate deploy && node server.js",
+    "start": "node server.js",
     "dev": "nodemon server.js",
     "migrate": "prisma migrate dev",
     "studio": "prisma studio",
+    "build": "pkg . --targets node18-win-x64 --output ../messenger.exe",
     "postinstall": "prisma generate",
     "test": "echo \"Error: no test specified\" && exit 1"
   },

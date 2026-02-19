@@ -2,26 +2,40 @@ const express = require("express");
 const http = require("http");
 const { Server } = require("socket.io");
 const path = require("path");
+const fs = require("fs");
 const { body, validationResult } = require("express-validator");
-const { prisma } = require("./db");
+const { prisma, testConnection, initDatabase } = require("./db");
+const { exec } = require("child_process");
+
+// Загружаем переменные окружения из .env (если есть)
+require("dotenv").config({ path: path.join(__dirname, ".env"), override: true });
+
+// Встроенные значения по умолчанию
+process.env.DATABASE_URL = process.env.DATABASE_URL || "file:./dev.db";
+process.env.PORT = process.env.PORT || 3001;
 
 const app = express();
 const server = http.createServer(app);
 const io = new Server(server, {
   cors: {
-    origin: "*", // для отладки; в продакшене лучше ограничить
+    origin: "*", // для отладки; в продакшене можно ограничить
     methods: ["GET", "POST"]
   }
 });
 
-const PORT = process.env.PORT || 3001;
+const PORT = process.env.PORT;
 
-app.use(express.json());
-
-// Раздача статики из папки frontend (без public)
-const frontendPath = path.join(__dirname, "../frontend");
+// Определяем путь к папке frontend
+let frontendPath = path.join(__dirname, "frontend"); // для скомпилированного exe (exe в корне, frontend рядом)
+if (!fs.existsSync(frontendPath)) {
+  // Если не нашли, пробуем ../frontend (для разработки: запуск из папки backend)
+  frontendPath = path.join(__dirname, "../frontend");
+}
+console.log(`📁 Serving frontend from: ${frontendPath}`);
 app.use(express.static(frontendPath));
 
+app.use(express.json());
+ 
 // Валидация
 const validate = (req, res, next) => {
   const errors = validationResult(req);
@@ -92,22 +106,19 @@ app.post(
     try {
       const { text, senderId } = req.body;
       console.log(`📨 POST /messages: text="${text}", senderId=${senderId}`);
-
-      // Проверяем существование отправителя
+ 
       const sender = await prisma.user.findUnique({ where: { id: senderId } });
       if (!sender) {
         console.log(`❌ Sender not found: ${senderId}`);
         return res.status(400).json({ error: "Sender not found" });
       }
-
-      // Создаём сообщение в БД
+ 
       const msg = await prisma.message.create({
         data: { text, senderId },
         include: { sender: { select: { id: true, email: true, name: true } } },
       });
       console.log(`✅ Message created: id=${msg.id}`);
-
-      // Отправляем событие всем подключённым клиентам
+  
       const clientsCount = io.engine.clientsCount;
       console.log(`📤 Emitting 'new_message' to ${clientsCount} clients`);
       io.emit("new_message", msg);
@@ -139,7 +150,27 @@ io.on("connection", (socket) => {
   });
 });
 
-// Запуск сервера
-server.listen(PORT, () => {
-  console.log(`🚀 Server running on http://localhost:${PORT}`);
-});
+// ========== Запуск сервера ==========
+async function startServer() {
+  // Проверяем подключение к БД и инициализируем таблицы при необходимости
+  const connected = await testConnection();
+  if (!connected) {
+    console.log("⚠️ База данных не найдена, создаём таблицы...");
+    await initDatabase();
+  }
+
+  server.listen(PORT, () => {
+    console.log(`🚀 Server running on http://localhost:${PORT}`);
+    // Открываем браузер автоматически
+    const url = `http://localhost:${PORT}`;
+    if (process.platform === 'win32') {
+      exec(`start ${url}`);
+    } else if (process.platform === 'darwin') {
+      exec(`open ${url}`);
+    } else {
+      exec(`xdg-open ${url}`);
+    }
+  });
+}
+
+startServer();
