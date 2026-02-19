@@ -17,7 +17,7 @@ model User {
 
 model Message {
   id        Int      @id @default(autoincrement())
-  text      String   // убрали @db.Text
+  text      String
   senderId  String
   sender    User     @relation(fields: [senderId], references: [id])
   createdAt DateTime @default(now())
