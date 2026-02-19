@@ -4,7 +4,6 @@
     <meta charset="UTF-8" />
     <title>Messenger MVP (WebSocket + MySQL)</title>
     <style>
-        /* (те же стили, что и раньше) */
         body { font-family: system-ui; margin: 20px; }
         .row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
         input, button { padding: 10px; font-size: 14px; }
@@ -83,7 +82,16 @@
         async function loadMessages() {
             try {
                 const res = await fetch('/messages?take=200');
+                // Проверяем, что ответ успешный
+                if (!res.ok) {
+                    const errorData = await res.json();
+                    throw new Error(errorData.error || `HTTP error ${res.status}`);
+                }
                 const data = await res.json();
+                // Проверяем, что данные — массив
+                if (!Array.isArray(data)) {
+                    throw new Error('Сервер вернул некорректные данные (не массив)');
+                }
                 messagesEl.innerHTML = '';
                 data.forEach(displayMessage);
                 messagesEl.scrollTop = messagesEl.scrollHeight;
@@ -147,12 +155,12 @@
             messagesEl.scrollTop = messagesEl.scrollHeight;
         });
 
-        // Если userId уже есть в localStorage, можно загрузить историю и заблокировать форму входа
+        // Если userId уже есть в localStorage, загружаем историю и блокируем форму входа
         if (currentUserId) {
             emailInput.disabled = true;
             nameInput.disabled = true;
             createUserBtn.disabled = true;
-            setStatus('ok', 'ID пользователя загружен из localStorage');
+            setStatus('ok', 'Добро пожаловать! ID загружен из localStorage');
         }
 
         // Обработчики событий
