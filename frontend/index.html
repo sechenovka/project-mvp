@@ -1,0 +1,170 @@
+<!doctype html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8" />
+    <title>Messenger MVP (WebSocket + MySQL)</title>
+    <style>
+        /* (те же стили, что и раньше) */
+        body { font-family: system-ui; margin: 20px; }
+        .row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+        input, button { padding: 10px; font-size: 14px; }
+        #messages { margin-top: 16px; border: 1px solid #ddd; border-radius: 10px; padding: 12px; max-width: 900px; height: 400px; overflow-y: auto; }
+        .msg { padding: 10px 0; border-bottom: 1px solid #eee; }
+        .meta { color: #666; font-size: 12px; }
+        .error { color: #b00020; }
+        .ok { color: #0a7a0a; }
+    </style>
+</head>
+<body>
+    <h1>Messenger с MySQL и WebSocket</h1>
+
+    <div id="userSection" class="row">
+        <input id="email" type="email" placeholder="Email (обязательно)" />
+        <input id="name" placeholder="Имя (необязательно)" />
+        <button id="createUser">Создать / Войти</button>
+    </div>
+
+    <div class="spacer"></div>
+
+    <div class="row">
+        <input id="text" placeholder="Сообщение..." />
+        <button id="send">Отправить</button>
+        <button id="reload">Обновить историю</button>
+    </div>
+
+    <div id="status"></div>
+    <div id="messages"></div>
+
+    <script src="/socket.io/socket.io.js"></script>
+    <script>
+        const socket = io();
+
+        const statusEl = document.getElementById('status');
+        const messagesEl = document.getElementById('messages');
+        const emailInput = document.getElementById('email');
+        const nameInput = document.getElementById('name');
+        const textInput = document.getElementById('text');
+        const createUserBtn = document.getElementById('createUser');
+        const sendBtn = document.getElementById('send');
+        const reloadBtn = document.getElementById('reload');
+
+        let currentUserId = localStorage.getItem('userId') || null;
+
+        function setStatus(type, msg) {
+            statusEl.className = type;
+            statusEl.textContent = msg;
+        }
+
+        function escapeHtml(str) {
+            return String(str).replace(/[&<>"]/g, function(match) {
+                if (match === '&') return '&amp;';
+                if (match === '<') return '&lt;';
+                if (match === '>') return '&gt;';
+                if (match === '"') return '&quot;';
+                return match;
+            });
+        }
+
+        function displayMessage(msg) {
+            const msgDiv = document.createElement('div');
+            msgDiv.className = 'msg';
+            const meta = document.createElement('div');
+            meta.className = 'meta';
+            const sender = msg.sender?.name || msg.sender?.email || msg.senderId;
+            const time = msg.createdAt ? new Date(msg.createdAt).toLocaleString() : '';
+            meta.textContent = `${escapeHtml(sender)} • ${time}`;
+            const textDiv = document.createElement('div');
+            textDiv.textContent = msg.text;
+            msgDiv.appendChild(meta);
+            msgDiv.appendChild(textDiv);
+            messagesEl.appendChild(msgDiv);
+        }
+
+        async function loadMessages() {
+            try {
+                const res = await fetch('/messages?take=200');
+                const data = await res.json();
+                messagesEl.innerHTML = '';
+                data.forEach(displayMessage);
+                messagesEl.scrollTop = messagesEl.scrollHeight;
+            } catch (e) {
+                setStatus('error', 'Ошибка загрузки: ' + e.message);
+            }
+        }
+
+        // Создание/получение пользователя
+        async function createOrGetUser() {
+            const email = emailInput.value.trim();
+            if (!email) {
+                setStatus('error', 'Введите email');
+                return;
+            }
+            try {
+                const res = await fetch('/users', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email, name: nameInput.value.trim() || undefined })
+                });
+                const user = await res.json();
+                if (!res.ok) throw new Error(user.error || 'Ошибка');
+                currentUserId = user.id;
+                localStorage.setItem('userId', currentUserId);
+                setStatus('ok', `Пользователь: ${user.name || user.email} (ID сохранён)`);
+                emailInput.disabled = true;
+                nameInput.disabled = true;
+                createUserBtn.disabled = true;
+            } catch (e) {
+                setStatus('error', e.message);
+            }
+        }
+
+        // Отправка сообщения
+        async function sendMessage() {
+            if (!currentUserId) {
+                setStatus('error', 'Сначала создайте пользователя');
+                return;
+            }
+            const text = textInput.value.trim();
+            if (!text) return;
+            try {
+                const res = await fetch('/messages', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ text, senderId: currentUserId })
+                });
+                const data = await res.json();
+                if (!res.ok) throw new Error(data.error || 'Ошибка');
+                textInput.value = '';
+                // сообщение придёт через сокет
+            } catch (e) {
+                setStatus('error', e.message);
+            }
+        }
+
+        // WebSocket: новые сообщения
+        socket.on('new_message', (msg) => {
+            displayMessage(msg);
+            messagesEl.scrollTop = messagesEl.scrollHeight;
+        });
+
+        // Если userId уже есть в localStorage, можно загрузить историю и заблокировать форму входа
+        if (currentUserId) {
+            emailInput.disabled = true;
+            nameInput.disabled = true;
+            createUserBtn.disabled = true;
+            setStatus('ok', 'ID пользователя загружен из localStorage');
+        }
+
+        // Обработчики событий
+        createUserBtn.addEventListener('click', createOrGetUser);
+        sendBtn.addEventListener('click', sendMessage);
+        reloadBtn.addEventListener('click', loadMessages);
+        textInput.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') sendMessage();
+        });
+
+        // Загрузка истории при старте
+        loadMessages();
+    </script>
+</body>
+</html>
