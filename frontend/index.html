@@ -2,7 +2,7 @@
 <html lang="ru">
 <head>
     <meta charset="UTF-8" />
-    <title>Messenger (автономная версия)</title>
+    <title>Messenger (с аутентификацией)</title>
     <style>
         body { font-family: system-ui; margin: 20px; }
         .row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
@@ -12,26 +12,111 @@
         .meta { color: #666; font-size: 12px; }
         .error { color: #b00020; }
         .ok { color: #0a7a0a; }
+        .auth-tabs { display: flex; gap: 8px; margin-bottom: 10px; }
+        .tab-btn { padding: 8px 16px; cursor: pointer; background: #eee; border: none; }
+        .tab-btn.active { background: #007bff; color: white; }
+        .auth-form { display: none; }
+        .auth-form.active { display: block; }
+        .modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; }
+        .modal-content { background: white; padding: 20px; border-radius: 8px; max-width: 400px; width: 100%; }
+        #user-info { margin-bottom: 10px; display: flex; align-items: center; gap: 10px; }
+        #chat-container { display: none; }
+        .hint {
+            display: block;
+            font-size: 0.8em;
+            color: #666;
+            margin-top: 2px;
+            margin-bottom: 4px;
+        }
+        .field-error {
+            color: #b00020;
+            font-size: 0.8em;
+            margin-top: 2px;
+            margin-bottom: 8px;
+        }
+        input.error-border {
+            border: 1px solid #b00020;
+        }
     </style>
 </head>
 <body>
-    <h1>Локальный мессенджер</h1>
+    <h1>Мессенджер с защитой</h1>
 
-    <div id="userSection" class="row">
-        <input id="email" type="email" placeholder="Email (обязательно)" />
-        <input id="name" placeholder="Имя (необязательно)" />
-        <button id="createUser">Войти</button>
+    <div id="auth-container">
+        <div class="auth-tabs">
+            <button class="tab-btn active" data-tab="login">Вход</button>
+            <button class="tab-btn" data-tab="register">Регистрация</button>
+        </div>
+
+        <!-- Форма входа -->
+        <div id="login-form" class="auth-form active">
+            <input type="email" id="login-email" placeholder="Email" required>
+            <small class="hint">Например: user@example.com</small>
+            <div class="field-error" id="login-email-error"></div>
+
+            <input type="password" id="login-password" placeholder="Пароль" required>
+            <small class="hint">минимум 6 символов</small>
+            <div class="field-error" id="login-password-error"></div>
+
+            <button id="login-btn">Войти</button>
+        </div>
+
+        <!-- Форма регистрации -->
+        <div id="register-form" class="auth-form">
+            <input type="email" id="reg-email" placeholder="Email" required>
+            <small class="hint">Например: user@example.com</small>
+            <div class="field-error" id="reg-email-error"></div>
+
+            <input type="text" id="reg-name" placeholder="Имя (необязательно)">
+            <small class="hint">Например: Иван</small>
+            <div class="field-error" id="reg-name-error"></div>
+
+            <input type="tel" id="reg-phone" placeholder="Телефон (необязательно)">
+            <small class="hint">Например: 79123456789 или +79123456789</small>
+            <div class="field-error" id="reg-phone-error"></div>
+
+            <input type="password" id="reg-password" placeholder="Пароль (мин. 6 символов)" required>
+            <small class="hint">минимум 6 символов</small>
+            <div class="field-error" id="reg-password-error"></div>
+
+            <input type="password" id="reg-password2" placeholder="Повторите пароль" required>
+            <small class="hint">повторите пароль</small>
+            <div class="field-error" id="reg-password2-error"></div>
+
+            <button id="register-btn">Зарегистрироваться</button>
+        </div>
+    </div>
+
+    <!-- Диалог подтверждения email -->
+    <div id="verify-dialog" class="modal" style="display: none;">
+        <div class="modal-content">
+            <h3>Подтверждение email</h3>
+            <p>Код отправлен на <span id="verify-email"></span></p>
+            <input type="text" id="verify-code" placeholder="6-значный код" maxlength="6">
+            <button id="verify-btn">Подтвердить</button>
+            <button id="resend-code">Отправить код повторно</button>
+            <button id="cancel-verify">Отмена</button>
+        </div>
+    </div>
+
+    <!-- Панель пользователя (после входа) -->
+    <div id="user-info" style="display: none;">
+        <span id="current-user"></span>
+        <button id="logout-btn">Выйти</button>
+        <button id="delete-account-btn">Удалить аккаунт</button>
+    </div>
+
+    <!-- Чат (скрыт до входа) -->
+    <div id="chat-container">
+        <div class="row">
+            <input id="text" placeholder="Сообщение..." />
+            <button id="send">Отправить</button>
+            <button id="reload">Обновить историю</button>
+        </div>
+        <div id="status"></div>
+        <div id="messages"></div>
     </div>
  
-    <div class="row">
-        <input id="text" placeholder="Сообщение..." />
-        <button id="send">Отправить</button>
-        <button id="reload">Обновить</button>
-    </div>
-
-    <div id="status"></div>
-    <div id="messages"></div>
-
     <script src="/socket.io/socket.io.js"></script>
     <script src="client.js"></script>
 </body>
