@@ -13,9 +13,10 @@ const { body, validationResult } = require("express-validator");
 const { prisma, ensureTables } = require("./db");
 const { exec } = require("child_process");
 const SQLiteStore = require("connect-sqlite3")(session);
- 
+const os = require("os");
+
 require("dotenv").config({ path: path.join(__dirname, ".env"), override: true });
- 
+
 process.env.DATABASE_URL = process.env.DATABASE_URL || "file:./dev.db";
 process.env.PORT = process.env.PORT || 3001;
 process.env.SESSION_SECRET = process.env.SESSION_SECRET || "dev-secret";
@@ -28,10 +29,24 @@ const io = new Server(server, {
 
 const PORT = process.env.PORT;
 
+// Функция для получения локального IP-адреса
+function getLocalIp() {
+  const interfaces = os.networkInterfaces();
+  for (const name of Object.keys(interfaces)) {
+    for (const iface of interfaces[name]) {
+      // Пропускаем внутренние (loopback) и IPv6
+      if (iface.family === 'IPv4' && !iface.internal) {
+        return iface.address;
+      }
+    }
+  }
+  return '127.0.0.1'; // если не нашли, вернём localhost
+}
+
 // Определяем путь к папке frontend
 let frontendPath = path.join(__dirname, "frontend");
 if (!fs.existsSync(frontendPath)) {
-
+  
   frontendPath = path.join(__dirname, "../frontend");
 }
 console.log(`📁 Serving frontend from: ${frontendPath}`);
@@ -359,9 +374,17 @@ io.on("connection", (socket) => {
 // ========== Запуск сервера ==========
 async function startServer() {
   await ensureTables();
-  server.listen(PORT, () => {
-    console.log(`🚀 Server running on http://localhost:${PORT}`);
 
+  // Сервер слушает все сетевые интерфейсы (0.0.0.0)
+  server.listen(PORT, "0.0.0.0", () => {
+    const localIp = getLocalIp();
+    console.log(`🚀 Server running on http://localhost:${PORT}`);
+    console.log(`📡 Локальный IP: ${localIp}`);
+    console.log(`👉 Другие устройства в сети могут подключиться по адресу: http://${localIp}:${PORT}`);
+    console.log(`⚠️ Если подключение не работает, возможно, порт ${PORT} закрыт брандмауэром.`);
+    console.log(`   Разрешите входящие подключения для этого приложения или откройте порт вручную.`);
+
+    // Автоматически открываем браузер на localhost
     const url = `http://localhost:${PORT}`;
     if (process.platform === 'win32') exec(`start ${url}`);
     else if (process.platform === 'darwin') exec(`open ${url}`);
