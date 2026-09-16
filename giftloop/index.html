@@ -3,57 +3,66 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>GiftLoop — group gift, one link</title>
+<meta name="description" content="GiftLoop — collect a group gift from one simple link." />
+<meta property="og:title" content="GiftLoop — one link, everyone chips in" />
+<meta property="og:description" content="Collect a group gift without the group-chat mess. No app. No account." />
+<title>GiftLoop — one link, everyone chips in</title>
 <style>
-:root{font-family:Inter,system-ui,-apple-system,Segoe UI,sans-serif;color:#171717;background:#f5f5f2}
-*{box-sizing:border-box} body{margin:0}.wrap{max-width:760px;margin:0 auto;padding:28px 18px 64px}.brand{font-weight:800;font-size:24px;letter-spacing:-.04em}.hero{padding:58px 0 28px}.eyebrow{font-size:13px;font-weight:700;text-transform:uppercase;letter-spacing:.12em;opacity:.55}.hero h1{font-size:clamp(38px,8vw,66px);line-height:.96;letter-spacing:-.06em;margin:10px 0 18px;max-width:650px}.hero p{font-size:18px;line-height:1.5;opacity:.7;max-width:620px}.card{background:#fff;border:1px solid #deded8;border-radius:22px;padding:22px;box-shadow:0 10px 30px rgba(0,0,0,.05);margin-top:22px}.grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}@media(max-width:600px){.grid{grid-template-columns:1fr}}label{display:block;font-size:13px;font-weight:700;margin:0 0 6px}input,textarea,button{font:inherit}input,textarea{width:100%;border:1px solid #d6d6cf;border-radius:12px;padding:12px 13px;background:#fff}textarea{min-height:90px;resize:vertical}button{border:0;border-radius:12px;padding:13px 16px;font-weight:800;cursor:pointer;background:#171717;color:#fff}.muted{opacity:.62}.share{display:flex;gap:10px;align-items:center;flex-wrap:wrap}.share input{flex:1;min-width:240px;background:#f5f5f2}.progress{height:12px;background:#ecece6;border-radius:99px;overflow:hidden}.bar{height:100%;background:#171717;border-radius:99px}.money{font-size:44px;font-weight:850;letter-spacing:-.05em}.people{display:grid;gap:9px;margin-top:16px}.person{display:flex;justify-content:space-between;gap:12px;padding:12px 0;border-bottom:1px solid #eee}.hidden{display:none}.success{font-weight:800}.err{color:#9d1616;font-size:14px;margin-top:10px}.footer{font-size:13px;opacity:.5;margin-top:30px}
+:root{font-family:Inter,ui-sans-serif,system-ui,-apple-system,Segoe UI,sans-serif;color:#171717;background:#f5f5f2;font-synthesis:none}
+*{box-sizing:border-box}body{margin:0}.wrap{max-width:780px;margin:0 auto;padding:24px 18px 64px}.brand{font-weight:900;font-size:24px;letter-spacing:-.05em}.hero{padding:54px 0 25px}.eyebrow{font-size:12px;font-weight:800;text-transform:uppercase;letter-spacing:.14em;opacity:.52}.hero h1{font-size:clamp(40px,9vw,72px);line-height:.94;letter-spacing:-.065em;margin:11px 0 18px;max-width:700px}.hero p{font-size:18px;line-height:1.55;opacity:.7;max-width:650px}.card{background:#fff;border:1px solid #deded8;border-radius:24px;padding:22px;box-shadow:0 12px 32px rgba(0,0,0,.05);margin-top:18px}.grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}@media(max-width:600px){.grid{grid-template-columns:1fr}}label{display:block;font-size:13px;font-weight:800;margin:0 0 6px}input,textarea,button{font:inherit}input,textarea{width:100%;border:1px solid #d5d5ce;border-radius:13px;padding:12px 13px;background:#fff;outline:none}input:focus,textarea:focus{border-color:#171717;box-shadow:0 0 0 3px rgba(23,23,23,.08)}textarea{min-height:92px;resize:vertical}button{border:0;border-radius:13px;padding:13px 16px;font-weight:850;cursor:pointer;background:#171717;color:#fff}button.secondary{background:#efefe9;color:#171717}.muted{opacity:.62}.share{display:flex;gap:10px;align-items:center;flex-wrap:wrap}.share input{flex:1;min-width:240px;background:#f5f5f2}.progress{height:12px;background:#ecece6;border-radius:99px;overflow:hidden}.bar{height:100%;background:#171717;border-radius:99px;transition:width .25s ease}.money{font-size:44px;font-weight:900;letter-spacing:-.055em}.people{display:grid;gap:8px;margin-top:14px}.person{display:flex;justify-content:space-between;gap:12px;padding:12px 0;border-bottom:1px solid #eee}.pill{display:inline-flex;align-items:center;gap:6px;border-radius:99px;background:#efefe9;padding:7px 10px;font-size:12px;font-weight:800}.hidden{display:none}.success{font-weight:800;margin-top:12px}.err{color:#9d1616;font-size:14px;margin-top:10px}.footer{font-size:12px;opacity:.48;margin-top:28px}.actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:16px}.countdown{font-weight:800}.tiny{font-size:13px}
 </style>
 </head>
 <body>
 <div class="wrap">
   <div class="brand">GiftLoop</div>
   <section id="home">
-    <div class="hero"><div class="eyebrow">One link. Everyone chips in.</div><h1>Collect a group gift without a group-chat mess.</h1><p>Create a gift page, drop the link into WhatsApp, Telegram or Discord, and let everyone add their contribution. No app. No account.</p></div>
+    <div class="hero"><div class="eyebrow">One link. Everyone chips in.</div><h1>Collect a group gift without the group-chat mess.</h1><p>Create a gift page, drop one link into WhatsApp, Telegram or Discord, and let everyone contribute in seconds. No app. No account.</p></div>
     <div class="card">
       <div class="grid">
-        <div><label>What are you buying?</label><input id="title" placeholder="e.g. New headphones" /></div>
-        <div><label>For whom?</label><input id="recipient" placeholder="e.g. Alex" /></div>
+        <div><label>What are you buying?</label><input id="title" placeholder="e.g. New headphones" maxlength="120" /></div>
+        <div><label>For whom?</label><input id="recipient" placeholder="e.g. Alex" maxlength="80" /></div>
         <div><label>Target amount</label><input id="target" type="number" min="1" step="0.01" placeholder="150" /></div>
         <div><label>Currency</label><input id="currency" value="EUR" maxlength="8" /></div>
       </div>
-      <div style="margin-top:12px"><label>Message (optional)</label><textarea id="message" placeholder="Birthday present — surprise!"></textarea></div>
+      <div style="margin-top:12px"><label>Collection deadline (optional)</label><input id="deadline" type="datetime-local" /></div>
+      <div style="margin-top:12px"><label>Message (optional)</label><textarea id="message" placeholder="Birthday present — surprise!" maxlength="500"></textarea></div>
       <button style="margin-top:14px" onclick="createGift()">Create gift link</button><div id="createErr" class="err"></div>
     </div>
   </section>
-
   <section id="gift" class="hidden"></section>
-  <div class="footer">GiftLoop MVP · intentionally simple: sharing is the growth loop.</div>
+  <div class="footer">GiftLoop MVP · sharing is the growth loop.</div>
 </div>
 <script>
 const $=id=>document.getElementById(id);
 function esc(s){return String(s??'').replace(/[&<>'"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c]))}
+function formatMoney(n,c){return `${Number(n).toFixed(2)} ${esc(c)}`}
+function toIsoFromLocal(value){if(!value)return null;const d=new Date(value);return d.toISOString()}
 async function createGift(){
   $('createErr').textContent='';
-  const body={title:$('title').value,recipient:$('recipient').value,target:Number($('target').value),currency:$('currency').value,message:$('message').value};
-  try{const r=await fetch('/api/gifts',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});const d=await r.json();if(!r.ok)throw new Error(d.detail||'Could not create');location.href=d.url}catch(e){$('createErr').textContent=e.message}
+  const target=Number($('target').value);
+  if(!target||target<=0){$('createErr').textContent='Enter a target amount.';return}
+  const body={title:$('title').value,recipient:$('recipient').value,target,currency:$('currency').value,message:$('message').value,deadline:toIsoFromLocal($('deadline').value)};
+  try{const r=await fetch('/api/gifts',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});const d=await r.json();if(!r.ok)throw new Error(Array.isArray(d.detail)?d.detail.map(x=>x.msg).join(', '):(d.detail||'Could not create'));location.href=d.url}catch(e){$('createErr').textContent=e.message}
 }
 async function contribute(id){
-  const name=$('name').value.trim(), amount=Number($('amount').value), note=$('note').value.trim();
-  $('contribErr').textContent='';
-  if(!name||!amount){$('contribErr').textContent='Name and amount are required.';return}
+  const name=$('name').value.trim(), amount=Number($('amount').value), note=$('note').value.trim(); $('contribErr').textContent='';
+  if(!name||!amount||amount<=0){$('contribErr').textContent='Name and a valid amount are required.';return}
   const r=await fetch(`/api/gifts/${id}/contributions`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({name,amount,note})});
-  const d=await r.json(); if(!r.ok){$('contribErr').textContent=d.detail||'Could not save';return} loadGift(id)
+  const d=await r.json(); if(!r.ok){$('contribErr').textContent=d.detail||'Could not save';return} loadGift(id,'Thanks — your contribution was added.');
 }
-async function copyLink(){await navigator.clipboard.writeText(location.href);$('copy').textContent='Copied'}
-async function loadGift(id){
-  const r=await fetch(`/api/gifts/${id}`); if(!r.ok){$('home').innerHTML='<div class="hero"><h1>Gift not found.</h1></div>';return}
-  const d=await r.json(), g=d.gift, pct=Math.min(100,d.total/g.target*100);
+async function copyLink(){try{await navigator.clipboard.writeText(location.href);$('copy').textContent='Copied'}catch{$('copy').textContent='Select & copy'}}
+async function shareGift(){if(navigator.share){await navigator.share({title:document.title,text:'Join this group gift',url:location.href})}else copyLink()}
+function deadlineText(raw){if(!raw)return '';const d=new Date(raw); if(Number.isNaN(d.getTime()))return '';return `Closes ${d.toLocaleString([], {dateStyle:'medium',timeStyle:'short'})}`}
+async function loadGift(id,notice=''){
+  const r=await fetch(`/api/gifts/${id}`); if(!r.ok){$('home').innerHTML='<div class="hero"><h1>Gift not found.</h1><p>The link may be invalid or the gift may have been removed.</p></div>';return}
+  const d=await r.json(), g=d.gift, pct=Math.min(100,d.total/d.target*100), closed=d.status==='closed', funded=d.status==='funded';
   $('home').classList.add('hidden');$('gift').classList.remove('hidden');
-  const list=d.contributions.map(x=>`<div class="person"><span><strong>${esc(x.name)}</strong>${x.note?`<span class="muted"> · ${esc(x.note)}</span>`:''}</span><strong>${x.amount.toFixed(2)} ${esc(g.currency)}</strong></div>`).join('')||'<div class="muted">No contributions yet. Be the first.</div>';
-  $('gift').innerHTML=`<div class="hero"><div class="eyebrow">Group gift</div><h1>${esc(g.title)}</h1><p>For <strong>${esc(g.recipient)}</strong>${g.message?` · ${esc(g.message)}`:''}</p></div>
-  <div class="card"><div class="money">${d.total.toFixed(2)} ${esc(g.currency)} <span class="muted" style="font-size:20px;font-weight:600">of ${Number(g.target).toFixed(2)} ${esc(g.currency)}</span></div><div class="progress" style="margin:16px 0 12px"><div class="bar" style="width:${pct}%"></div></div><div class="muted">${pct.toFixed(0)}% funded</div></div>
-  <div class="card"><h2 style="margin-top:0">Add your contribution</h2><div class="grid"><div><label>Your name</label><input id="name" placeholder="Jamie" /></div><div><label>Amount</label><input id="amount" type="number" min="0.01" step="0.01" placeholder="25" /></div></div><div style="margin-top:12px"><label>Note (optional)</label><input id="note" placeholder="Happy birthday!" /></div><button style="margin-top:14px" onclick="contribute('${esc(id)}')">Add contribution</button><div id="contribErr" class="err"></div></div>
-  <div class="card"><div class="share"><input readonly value="${esc(location.href)}" /><button id="copy" onclick="copyLink()">Copy link</button></div><p class="muted">Send this one link to everyone. They can contribute from the browser — no account required.</p></div>
+  const status=funded?'<span class="pill">Funded</span>':closed?'<span class="pill">Closed</span>':'<span class="pill">Open</span>';
+  const list=d.contributions.map(x=>`<div class="person"><span><strong>${esc(x.name)}</strong>${x.note?`<span class="muted"> · ${esc(x.note)}</span>`:''}</span><strong>${formatMoney(x.amount,g.currency)}</strong></div>`).join('')||'<div class="muted">No contributions yet. Be the first.</div>';
+  const form=closed?`<div class="card"><strong>This collection is closed.</strong><p class="muted">Thanks to everyone who chipped in.</p></div>`:`<div class="card"><h2 style="margin-top:0">Add your contribution</h2><div class="grid"><div><label>Your name</label><input id="name" placeholder="Jamie" maxlength="80" /></div><div><label>Amount</label><input id="amount" type="number" min="0.01" step="0.01" placeholder="25" /></div></div><div style="margin-top:12px"><label>Note (optional)</label><input id="note" placeholder="Happy birthday!" maxlength="240" /></div><button style="margin-top:14px" onclick="contribute('${esc(id)}')">Add contribution</button><div id="contribErr" class="err"></div>${notice?`<div class="success">${esc(notice)}</div>`:''}</div>`;
+  $('gift').innerHTML=`<div class="hero"><div class="eyebrow">Group gift · ${status}</div><h1>${esc(g.title)}</h1><p>For <strong>${esc(g.recipient)}</strong>${g.message?` · ${esc(g.message)}`:''}${g.deadline?`<br><span class="countdown">${esc(deadlineText(g.deadline))}</span>`:''}</p></div>
+  <div class="card"><div class="money">${formatMoney(d.total,g.currency)} <span class="muted" style="font-size:20px;font-weight:650">of ${formatMoney(g.target,g.currency)}</span></div><div class="progress" style="margin:16px 0 12px"><div class="bar" style="width:${pct}%"></div></div><div class="tiny muted">${pct.toFixed(0)}% funded · ${formatMoney(d.remaining,g.currency)} left</div><div class="actions"><button onclick="shareGift()">Share gift</button><button class="secondary" id="copy" onclick="copyLink()">Copy link</button></div></div>
+  ${form}
   <div class="card"><h2 style="margin-top:0">Contributors</h2><div class="people">${list}</div></div>`;
 }
 const parts=location.pathname.split('/'); if(parts[1]==='g'&&parts[2])loadGift(parts[2]);
