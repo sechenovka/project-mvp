@@ -26,7 +26,7 @@ GiftLoop is a viral-first group-gift MVP: create one gift link, drop it into a g
 
 ```bash
 python -m venv .venv
-venv\\Scripts\\activate  # Windows
+.venv\\Scripts\\activate  # Windows
 pip install -r requirements.txt
 uvicorn app:app --reload
 ```
