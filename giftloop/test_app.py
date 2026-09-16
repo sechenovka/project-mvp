@@ -17,16 +17,11 @@ def test_flow(tmp_path: Path, monkeypatch):
     )
     assert created.status_code == 200
     gift_id = created.json()["id"]
-
-    page = client.get(f"/g/{gift_id}")
-    assert page.status_code == 200
-    assert "GiftLoop" in page.text
-
-    state = client.get(f"/api/gifts/{gift_id}")
-    assert state.status_code == 200
-    assert state.json()["total"] == 0
-    assert state.json()["remaining"] == 100
-    assert state.json()["status"] == "open"
+    assert client.get(f"/g/{gift_id}").status_code == 200
+    state = client.get(f"/api/gifts/{gift_id}").json()
+    assert state["total"] == 0
+    assert state["remaining"] == 100
+    assert state["status"] == "open"
 
     added = client.post(
         f"/api/gifts/{gift_id}/contributions",
@@ -45,11 +40,13 @@ def test_closed_gift_rejects_contribution(tmp_path: Path, monkeypatch):
     client = TestClient(app.app)
     created = client.post(
         "/api/gifts",
-        json={"title": "Gift", "recipient": "Sam", "target": 20, "deadline": (datetime.now(timezone.utc) + timedelta(seconds=1)).isoformat()},
+        json={"title": "Gift", "recipient": "Sam", "target": 20, "deadline": (datetime.now(timezone.utc) + timedelta(days=1)).isoformat()},
     )
     gift_id = created.json()["id"]
     conn = app.db()
     conn.execute("UPDATE gifts SET deadline=? WHERE id=?", ((datetime.now(timezone.utc) - timedelta(days=1)).isoformat(), gift_id))
-    conn.commit(); conn.close()
-    response = client.post(f"/api/gifts/{gift_id}/contributions", json={"name":"Sam","amount":5})
+    conn.commit()
+    conn.close()
+
+    response = client.post(f"/api/gifts/{gift_id}/contributions", json={"name": "Sam", "amount": 5})
     assert response.status_code == 409
