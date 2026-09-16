@@ -7,7 +7,7 @@ These are qualified prospects/signals, not confirmed buyers. The goal is to vali
 ## High-signal communities
 
 1. **People Ops Community - NL**
-   Public LinkedIn page describes an active Slack workspace for HR professionals in the Netherlands. Potential channel for testing recurring workplace birthday/farewell collections.
+   Public LinkedIn page describes an active Slack workspace for HR professionals in the Netherlands.
    Source: https://www.linkedin.com/company/people-ops-community-nl/
 
 2. **Office Heroes**
@@ -91,3 +91,7 @@ Differentiators to validate:
 Target organisers, not recipients: office managers, executive assistants, People Ops/HR coordinators, team leads, and the person who repeatedly gets stuck organising birthdays/farewells.
 
 Success criterion for the first experiment: 5 independent organisers use GiftLoop for real upcoming collections. A payment system is not required for this test.
+
+## Outreach status
+
+No direct outreach has been sent from this environment. The public channels above are research leads. Do not represent them as customers or claim endorsement.
