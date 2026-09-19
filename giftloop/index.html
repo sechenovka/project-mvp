@@ -9,8 +9,9 @@
 <title>GiftLoop — one link, everyone chips in</title>
 <style>
 :root{font-family:Inter,ui-sans-serif,system-ui,-apple-system,Segoe UI,sans-serif;color:#171717;background:#f5f5f2;font-synthesis:none}
-*{box-sizing:border-box}body{margin:0}.wrap{max-width:780px;margin:0 auto;padding:24px 18px 64px}.brand{font-weight:900;font-size:24px;letter-spacing:-.05em}.hero{padding:54px 0 25px}.eyebrow{font-size:12px;font-weight:800;text-transform:uppercase;letter-spacing:.14em;opacity:.52}.hero h1{font-size:clamp(40px,9vw,72px);line-height:.94;letter-spacing:-.065em;margin:11px 0 18px;max-width:700px}.hero p{font-size:18px;line-height:1.55;opacity:.7;max-width:650px}.card{background:#fff;border:1px solid #deded8;border-radius:24px;padding:22px;box-shadow:0 12px 32px rgba(0,0,0,.05);margin-top:18px}.grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}@media(max-width:600px){.grid{grid-template-columns:1fr}}label{display:block;font-size:13px;font-weight:800;margin:0 0 6px}input,textarea,button{font:inherit}input,textarea{width:100%;border:1px solid #d5d5ce;border-radius:13px;padding:12px 13px;background:#fff;outline:none}input:focus,textarea:focus{border-color:#171717;box-shadow:0 0 0 3px rgba(23,23,23,.08)}textarea{min-height:92px;resize:vertical}button{border:0;border-radius:13px;padding:13px 16px;font-weight:850;cursor:pointer;background:#171717;color:#fff}button.secondary{background:#efefe9;color:#171717}.muted{opacity:.62}.progress{height:12px;background:#ecece6;border-radius:99px;overflow:hidden}.bar{height:100%;background:#171717;border-radius:99px;transition:width .25s ease}.money{font-size:44px;font-weight:900;letter-spacing:-.055em}.people{display:grid;gap:8px;margin-top:14px}.person{display:flex;justify-content:space-between;gap:12px;padding:12px 0;border-bottom:1px solid #eee}.pill{display:inline-flex;align-items:center;gap:6px;border-radius:99px;background:#efefe9;padding:7px 10px;font-size:12px;font-weight:800}.hidden{display:none}.success{font-weight:800;margin-top:12px}.err{color:#9d1616;font-size:14px;margin-top:10px}.footer{font-size:12px;opacity:.48;margin-top:28px}.actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:16px}.countdown{font-weight:800}.tiny{font-size:13px}
+*{box-sizing:border-box}body{margin:0}.wrap{max-width:780px;margin:0 auto;padding:24px 18px 64px}.brand{font-weight:900;font-size:24px;letter-spacing:-.05em}.hero{padding:54px 0 25px}.eyebrow{font-size:12px;font-weight:800;text-transform:uppercase;letter-spacing:.14em;opacity:.52}.hero h1{font-size:clamp(40px,9vw,72px);line-height:.94;letter-spacing:-.065em;margin:11px 0 18px;max-width:700px}.hero p{font-size:18px;line-height:1.55;opacity:.7;max-width:650px}.card{background:#fff;border:1px solid #deded8;border-radius:24px;padding:22px;box-shadow:0 12px 32px rgba(0,0,0,.05);margin-top:18px}.grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}@media(max-width:600px){.grid{grid-template-columns:1fr}}label{display:block;font-size:13px;font-weight:800;margin:0 0 6px}input,textarea,button{font:inherit}input,textarea{width:100%;border:1px solid #d5d5ce;border-radius:13px;padding:12px 13px;background:#fff;outline:none}input:focus,textarea:focus{border-color:#171717;box-shadow:0 0 0 3px rgba(23,23,23,.08)}textarea{min-height:92px;resize:vertical}button{border:0;border-radius:13px;padding:13px 16px;font-weight:850;cursor:pointer;background:#171717;color:#fff}button.secondary{background:#efefe9;color:#171717}.muted{opacity:.62}.progress{height:12px;background:#ecece6;border-radius:99px;overflow:hidden}.bar{height:100%;background:#171717;border-radius:99px;transition:width .25s ease}.money{font-size:44px;font-weight:900;letter-spacing:-.055em}.people{display:grid;gap:8px;margin-top:14px}.person{display:flex;justify-content:space-between;gap:12px;padding:12px 0;border-bottom:1px solid #eee}.pill{display:inline-flex;align-items:center;gap:6px;border-radius:99px;background:#efefe9;padding:7px 10px;font-size:12px;font-weight:800}.hidden{display:none}.success{font-weight:800;margin-top:12px}.err{color:#9d1616;font-size:14px;margin-top:10px}.footer{font-size:12px;opacity:.48;margin-top:28px}.actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:16px}.countdown{font-weight:800}.tiny{font-size:13px}.premium{border:2px solid #171717}.payment-status{margin-top:10px;font-size:14px;font-weight:750}
 </style>
+<script src="https://widget.cloudpayments.ru/bundles/cloudpayments"></script>
 </head>
 <body>
 <div class="wrap">
@@ -28,21 +29,54 @@
       <div style="margin-top:12px"><label>Message (optional)</label><textarea id="message" placeholder="Birthday present — surprise!" maxlength="500"></textarea></div>
       <button style="margin-top:14px" onclick="createGift()">Create gift link</button><div id="createErr" class="err"></div>
     </div>
+    <div class="card premium" id="premiumCard">
+      <div class="eyebrow">GiftLoop Plus</div>
+      <h2>Support the product and unlock Plus</h2>
+      <p class="muted">One-time payment. No card details touch GiftLoop.</p>
+      <button onclick="startPremiumPayment()">Pay <span id="premiumPrice">199 ₽</span></button>
+      <div id="paymentStatus" class="payment-status"></div>
+      <div id="paymentErr" class="err"></div>
+    </div>
   </section>
   <section id="gift" class="hidden"></section>
   <div class="footer">GiftLoop MVP · sharing is the growth loop.</div>
 </div>
 <script>
 const $=id=>document.getElementById(id);
+let paymentConfig={payments_enabled:false};
 function esc(s){return String(s??'').replace(/[&<>'"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c]))}
 function formatMoney(n,c){return `${Number(n).toFixed(2)} ${esc(c)}`}
 function toIsoFromLocal(value){if(!value)return null;const d=new Date(value);return d.toISOString()}
+async function loadConfig(){try{const r=await fetch('/api/config');paymentConfig=await r.json();$('premiumPrice').textContent=`${paymentConfig.premium_price_rub} ₽`;if(!paymentConfig.payments_enabled)$('premiumCard').classList.add('hidden')}catch{}}
 async function createGift(){
-  $('createErr').textContent='';
-  const target=Number($('target').value);
-  if(!target||target<=0){$('createErr').textContent='Enter a target amount.';return}
+  $('createErr').textContent=''; const target=Number($('target').value); if(!target||target<=0){$('createErr').textContent='Enter a target amount.';return}
   const body={title:$('title').value,recipient:$('recipient').value,target,currency:$('currency').value,message:$('message').value,deadline:toIsoFromLocal($('deadline').value)};
   try{const r=await fetch('/api/gifts',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});const d=await r.json();if(!r.ok)throw new Error(Array.isArray(d.detail)?d.detail.map(x=>x.msg).join(', '):(d.detail||'Could not create'));location.href=d.url}catch(e){$('createErr').textContent=e.message}
+}
+async function startPremiumPayment(){
+  $('paymentErr').textContent=''; $('paymentStatus').textContent='';
+  try{
+    const r=await fetch('/api/payments/intents',{method:'POST'}); const intent=await r.json(); if(!r.ok)throw new Error(intent.detail||'Payments unavailable');
+    if(!window.cp||!window.cp.CloudPayments)throw new Error('Payment widget failed to load');
+    const widget=new cp.CloudPayments();
+    widget.charge('charge',{
+      publicId:intent.public_id, description:intent.description, amount:intent.amount, currency:intent.currency,
+      invoiceId:intent.invoice_id, requireEmail:true, data:{GiftLoop:{product:'plus',version:'0.3.0'}}
+    },{
+      onSuccess:()=>pollPayment(intent.invoice_id),
+      onFail:()=>{$('paymentErr').textContent='Payment failed or was cancelled.'},
+      onComplete:()=>{}
+    });
+  }catch(e){$('paymentErr').textContent=e.message}
+}
+async function pollPayment(invoiceId){
+  $('paymentStatus').textContent='Payment received by the widget — verifying…';
+  for(let i=0;i<12;i++){
+    await new Promise(r=>setTimeout(r,1500));
+    const r=await fetch(`/api/payments/${encodeURIComponent(invoiceId)}`); if(!r.ok)continue; const d=await r.json();
+    if(d.status==='paid'){$('paymentStatus').textContent='Payment confirmed. Thank you.';return}
+  }
+  $('paymentStatus').textContent='Payment submitted. Confirmation may take a little longer.';
 }
 async function contribute(id){
   const name=$('name').value.trim(), amount=Number($('amount').value), note=$('note').value.trim(); $('contribErr').textContent='';
@@ -51,7 +85,7 @@ async function contribute(id){
   const d=await r.json(); if(!r.ok){$('contribErr').textContent=d.detail||'Could not save';return} loadGift(id,'Thanks — your contribution was added.');
 }
 async function copyLink(){try{await navigator.clipboard.writeText(location.href);$('copy').textContent='Copied'}catch{$('copy').textContent='Select & copy'}}
-async function shareGift(){if(navigator.share){await navigator.share({title:document.title,text:'Join this group gift',url:location.href})}else copyLink()}
+async function shareGift(){if(navigator.share){try{await navigator.share({title:document.title,text:'Join this group gift',url:location.href})}catch{} }else copyLink()}
 function deadlineText(raw){if(!raw)return '';const d=new Date(raw); if(Number.isNaN(d.getTime()))return '';return `Closes ${d.toLocaleString([], {dateStyle:'medium',timeStyle:'short'})}`}
 async function loadGift(id,notice=''){
   const r=await fetch(`/api/gifts/${id}`); if(!r.ok){$('home').innerHTML='<div class="hero"><h1>Gift not found.</h1><p>The link may be invalid or the gift may have been removed.</p></div>';return}
@@ -65,6 +99,7 @@ async function loadGift(id,notice=''){
   ${form}
   <div class="card"><h2 style="margin-top:0">Contributors</h2><div class="people">${list}</div></div>`;
 }
+loadConfig();
 const parts=location.pathname.split('/'); if(parts[1]==='g'&&parts[2])loadGift(parts[2]);
 </script>
 </body></html>
